@@ -1,1 +1,2 @@
-DROP TABLE IF EXISTS songs;
+DROP TABLE songs;
+DROP FUNCTION IF EXISTS update_timestamp;

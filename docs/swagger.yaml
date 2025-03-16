@@ -3,22 +3,37 @@ definitions:
   api.AddSongRequest:
     properties:
       group:
+        maxLength: 255
+        minLength: 1
         type: string
       song:
+        maxLength: 255
+        minLength: 1
         type: string
     required:
     - group
     - song
     type: object
+  api.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
   api.UpdateSongRequest:
     properties:
       group:
+        maxLength: 255
+        minLength: 1
         type: string
       link:
+        maxLength: 255
         type: string
       release_date:
+        maxLength: 10
         type: string
       song:
+        maxLength: 255
+        minLength: 1
         type: string
       text:
         type: string
@@ -28,8 +43,6 @@ definitions:
     type: object
   models.Song:
     properties:
-      created_at:
-        type: string
       group:
         type: string
       id:
@@ -42,7 +55,12 @@ definitions:
         type: string
       text:
         type: string
-      updated_at:
+    type: object
+  models.Verse:
+    properties:
+      number:
+        type: integer
+      text:
         type: string
     type: object
 host: localhost:8080
@@ -54,8 +72,8 @@ info:
 paths:
   /songs:
     get:
-      description: Retrieve songs with optional filtering by group, song, releaseDate
-        and pagination
+      description: Retrieve songs with optional filtering by group, song, releaseDate,
+        text, link, created_at, updated_at and pagination
       parameters:
       - description: Filter by group
         in: query
@@ -65,9 +83,25 @@ paths:
         in: query
         name: song
         type: string
-      - description: Filter by release date
+      - description: 'Filter by release date (format: YYYY-MM-DD)'
         in: query
         name: releaseDate
+        type: string
+      - description: Filter by text
+        in: query
+        name: text
+        type: string
+      - description: Filter by link
+        in: query
+        name: link
+        type: string
+      - description: 'Filter by created_at (format: YYYY-MM-DD)'
+        in: query
+        name: created_at
+        type: string
+      - description: 'Filter by updated_at (format: YYYY-MM-DD)'
+        in: query
+        name: updated_at
         type: string
       - default: 1
         description: Page number
@@ -88,12 +122,14 @@ paths:
             items:
               $ref: '#/definitions/models.Song'
             type: array
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Get list of songs with filtering and pagination
       tags:
       - songs
@@ -121,15 +157,11 @@ paths:
         "400":
           description: Invalid request body
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Create a new song
       tags:
       - songs
@@ -154,15 +186,15 @@ paths:
         "400":
           description: Invalid song ID
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Song not found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Delete a song
       tags:
       - songs
@@ -194,15 +226,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Song not found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Update a song
       tags:
       - songs
@@ -220,7 +252,7 @@ paths:
         in: query
         name: page
         type: integer
-      - default: 1
+      - default: 10
         description: Verses per page
         in: query
         name: limit
@@ -231,11 +263,32 @@ paths:
         "200":
           description: Returns the verses
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            items:
+              $ref: '#/definitions/models.Verse'
+            type: array
         "400":
-          description: Invalid song ID
+          description: Invalid song ID or query parameters
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Song not found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get verses of a song with pagination
+      tags:
+      - songs
+  /songs/truncate:
+    post:
+      description: Truncate the songs table and reset the ID sequence
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
           schema:
             additionalProperties:
               type: string
@@ -243,10 +296,8 @@ paths:
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get verses of a song with pagination
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Truncate songs table
       tags:
       - songs
 swagger: "2.0"

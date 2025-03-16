@@ -1,0 +1,2 @@
+ALTER TABLE songs
+ALTER COLUMN release_date TYPE VARCHAR(10);

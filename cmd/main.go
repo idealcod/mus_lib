@@ -11,7 +11,6 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
-	"github.com/joho/godotenv"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
@@ -22,6 +21,11 @@ import (
 	"music-library/internal/service"
 )
 
+// @title Music Library API
+// @version 1.0
+// @description API for managing music library
+// @host localhost:8080
+// @BasePath /
 func main() {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -32,13 +36,7 @@ func main() {
 	logger.Info("Starting application...")
 	logger.Debug("Initializing logger")
 
-	logger.Debug("Loading .env file")
-	err = godotenv.Load()
-	if err != nil {
-		logger.Warn("Failed to load .env file, using default values", zap.Error(err))
-	}
-
-	dbHost := getEnv("DB_HOST", "db")
+	dbHost := getEnv("DB_HOST", "postgres")
 	dbPort := getEnv("DB_PORT", "5432")
 	dbUser := getEnv("DB_USER", "postgres")
 	dbPassword := getEnv("DB_PASSWORD", "123456")
@@ -93,12 +91,14 @@ func main() {
 	}
 
 	logger.Debug("Initializing dependencies")
-	repo := repository.NewPostgresRepository(db)
+	repo := repository.NewPostgresRepository(db, logger)
 	svc := service.NewMusicService(repo, logger, &http.Client{})
 	handler := api.NewHandler(svc, logger)
 
 	logger.Debug("Configuring Gin router")
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	r.SetTrustedProxies([]string{"127.0.0.1"})
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/songs", handler.GetSongs)
 	r.POST("/songs", handler.AddSong)

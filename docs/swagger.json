@@ -11,7 +11,7 @@
     "paths": {
         "/songs": {
             "get": {
-                "description": "Retrieve songs with optional filtering by group, song, releaseDate and pagination",
+                "description": "Retrieve songs with optional filtering by group, song, releaseDate, text, link, created_at, updated_at and pagination",
                 "produces": [
                     "application/json"
                 ],
@@ -34,8 +34,32 @@
                     },
                     {
                         "type": "string",
-                        "description": "Filter by release date",
+                        "description": "Filter by release date (format: YYYY-MM-DD)",
                         "name": "releaseDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by text",
+                        "name": "text",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by link",
+                        "name": "link",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by created_at (format: YYYY-MM-DD)",
+                        "name": "created_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by updated_at (format: YYYY-MM-DD)",
+                        "name": "updated_at",
                         "in": "query"
                     },
                     {
@@ -63,13 +87,16 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     }
                 }
@@ -110,6 +137,32 @@
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/songs/truncate": {
+            "post": {
+                "description": "Truncate the songs table and reset the ID sequence",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "songs"
+                ],
+                "summary": "Truncate songs table",
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
                             "type": "object",
                             "additionalProperties": {
                                 "type": "string"
@@ -119,10 +172,7 @@
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     }
                 }
@@ -172,19 +222,19 @@
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Song not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     }
                 }
@@ -220,19 +270,19 @@
                     "400": {
                         "description": "Invalid song ID",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Song not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     }
                 }
@@ -265,7 +315,7 @@
                     },
                     {
                         "type": "integer",
-                        "default": 1,
+                        "default": 10,
                         "description": "Verses per page",
                         "name": "limit",
                         "in": "query"
@@ -275,28 +325,28 @@
                     "200": {
                         "description": "Returns the verses",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Verse"
                             }
                         }
                     },
                     "400": {
-                        "description": "Invalid song ID",
+                        "description": "Invalid song ID or query parameters",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Song not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     }
                 }
@@ -312,9 +362,21 @@
             ],
             "properties": {
                 "group": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 },
                 "song": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "api.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
                     "type": "string"
                 }
             }
@@ -327,16 +389,22 @@
             ],
             "properties": {
                 "group": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 },
                 "link": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "release_date": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 10
                 },
                 "song": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 },
                 "text": {
                     "type": "string"
@@ -346,9 +414,6 @@
         "models.Song": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
                 "group": {
                     "type": "string"
                 },
@@ -366,8 +431,16 @@
                 },
                 "text": {
                     "type": "string"
+                }
+            }
+        },
+        "models.Verse": {
+            "type": "object",
+            "properties": {
+                "number": {
+                    "type": "integer"
                 },
-                "updated_at": {
+                "text": {
                     "type": "string"
                 }
             }
